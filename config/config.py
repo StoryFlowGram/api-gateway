@@ -34,7 +34,7 @@ class Config:
         self.settings = Settings(_env_file=env_file)
 
 
-config = Config(env_file=".env")
+config = Config()
 
 def get_service_url(service_name: str) -> str | None:
     mapping = {
