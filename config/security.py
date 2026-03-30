@@ -2,7 +2,7 @@ import jwt
 from fastapi import Request, HTTPException, status
 from .config import Config
 
-settings = Config(".env").settings
+settings = Config().settings
 
 def validate_token(token: str) -> dict:
 
@@ -43,7 +43,7 @@ async def check_authentication(request: Request, service_name: str, path: str) -
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail=" Вы не авторизованы. Токен отсутствует"
+            detail="Ви не авторизовані"
         )
 
     try:
@@ -51,14 +51,14 @@ async def check_authentication(request: Request, service_name: str, path: str) -
     except HTTPException as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Невалидный токен"
+            detail="Невалідний токен"
         )
     
     user_id = payload.get("sub") 
     role = payload.get("role", "user")
     
     if not user_id:
-         raise HTTPException(status_code=401, detail="Токен не содержит ID")
+         raise HTTPException(status_code=401, detail="Токен не містить ID")
 
     return {
         "X-User-Id": str(user_id),
