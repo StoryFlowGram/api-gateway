@@ -17,7 +17,8 @@ class Settings(BaseSettings):
         "auth/telegram", 
         "auth/google",
         "auth/callback/google",
-        "auth/refresh"
+        "auth/refresh",
+        "auth/logout",
 
     ]
     JWT_SECRET_KEY: str 

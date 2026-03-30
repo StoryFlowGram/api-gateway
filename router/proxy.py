@@ -11,7 +11,7 @@ async def reverse_proxy(service_name: str, path: str, request: Request):
     
     target_url = get_service_url(service_name)
     if not target_url:
-        raise HTTPException(status_code=404, detail=f"Service '{service_name}' not found")
+        raise HTTPException(status_code=404, detail=f"Сервіс '{service_name}' не знайдено")
 
     auth_headers = await check_authentication(request, service_name, path)
     
@@ -51,17 +51,10 @@ async def reverse_proxy(service_name: str, path: str, request: Request):
             headers=response_headers
         )
 
-        for cookie in rp_resp.cookies.jar:
-            response.set_cookie(
-                key=cookie.name,
-                value=cookie.value,
-                httponly=True,
-                secure=True, 
-                samesite="none",
-                path=cookie.path if cookie.path else "/"
-            )
+        for set_cookie_value in rp_resp.headers.get_list("set-cookie"):
+            response.headers.append("set-cookie", set_cookie_value)
 
         return response
 
     except httpx.RequestError as e:
-        raise HTTPException(status_code=503, detail=f"Service unavailable: {e}")
+        raise HTTPException(status_code=503, detail=f"Сервіс недоступний: {e}")
