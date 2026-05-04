@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,6 +13,13 @@ docs_url = "/docs" if settings.ENABLE_DOCS else None
 redoc_url = "/redoc" if settings.ENABLE_DOCS else None
 openapi_url = "/openapi.json" if settings.ENABLE_DOCS else None
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await client.aclose()
+
+
 app = FastAPI(
     title="SFG API Gateway",
     description="Unified API gateway",
@@ -18,6 +27,7 @@ app = FastAPI(
     docs_url=docs_url,
     redoc_url=redoc_url,
     openapi_url=openapi_url,
+    lifespan=lifespan,
 )
 
 cors_origins = settings.cors_origins
@@ -33,11 +43,6 @@ app.add_middleware(
 )
 
 app.include_router(proxy.router)
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await client.aclose()
 
 
 @app.get("/health")
