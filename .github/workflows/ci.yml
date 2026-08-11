@@ -1,17 +1,28 @@
+name: CI/CD
 name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  POETRY_VERSION: "2.4.1"
 
 jobs:
-  build-and-test:
+  test:
+    name: Тесты
     runs-on: ubuntu-latest
-
     steps:
       - name: Завантажуємо код репозиторію
         uses: actions/checkout@v4
@@ -19,7 +30,20 @@ jobs:
       - name: Встановлюємо Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
+
+      - name: Установка Poetry ${{ env.POETRY_VERSION }}
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Кэш загрузок Poetry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: poetry-${{ runner.os }}-
+
+      - name: Установка зависимостей
+        run: poetry install --no-root || poetry install
 
       - name: Встановлюємо Poetry
         run: pip install poetry
@@ -39,8 +63,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }} 
-          password: ${{ secrets.GITHUB_TOKEN }} 
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Збираємо та пушимо Docker-образ до GCR
         uses: docker/build-push-action@v5
@@ -50,9 +74,11 @@ jobs:
             tags: ${{ steps.prep.outputs.image_id }}:latest
 
   deploy:
+    name: Деплой (production)
+    needs: build-and-push
     runs-on: ubuntu-latest
-    needs: build-and-test
     if: github.ref == 'refs/heads/main'
+    environment: production
 
     steps:
       - name: Виконуємо деплой на сервері
