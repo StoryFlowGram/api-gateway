@@ -195,6 +195,7 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 todo
+k8s/base/shared
 
 # Cursor
 #  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
@@ -207,3 +208,5 @@ todo
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+# Ignore k8s secrets
+k8s/**/secret.yaml

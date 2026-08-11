@@ -17,7 +17,17 @@ def is_public_route(service_name: str, path: str) -> bool:
     route_key = f"{service_name}/{normalized_path}" if normalized_path else service_name
 
     for public_route in settings.PUBLIC_ROUTES:
-        if route_key == public_route.strip("/"):
+        normalized_public_route = public_route.strip("/")
+        if not normalized_public_route:
+            continue
+
+        if normalized_public_route.endswith("/*"):
+            prefix = normalized_public_route[:-2].strip("/")
+            if route_key == prefix or route_key.startswith(f"{prefix}/"):
+                return True
+            continue
+
+        if route_key == normalized_public_route:
             return True
 
     if settings.ENABLE_DOCS and normalized_path in DOC_PUBLIC_ROUTES:
@@ -103,7 +113,13 @@ async def _fetch_token_version_from_identity(user_id: int) -> int:
 
 async def check_authentication(request: Request, service_name: str, path: str) -> dict | None:
     if is_public_route(service_name, path):
-        return None
+        if not settings.INTERNAL_GATEWAY_TOKEN:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="INTERNAL_GATEWAY_TOKEN is not configured",
+            )
+
+        return {"X-Gateway-Token": settings.INTERNAL_GATEWAY_TOKEN}
 
     token = request.cookies.get("access_token")
     if not token:

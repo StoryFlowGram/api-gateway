@@ -13,14 +13,17 @@ class Settings(BaseSettings):
     READER_SERVICE_URL: str = "http://reader-service:8000"
     LEARNING_SERVICE_URL: str = "http://learning-service:8000"
     TRANSLATION_SERVICE_URL: str = "http://translation-service:8000"
+    SEARCH_SERVICE_URL: str = "http://search-service:8000"
 
     ENABLE_DOCS: bool = False
     PUBLIC_ROUTES: list[str] = [
         "auth/telegram",
         "auth/google",
+        "auth/google/client-id",
         "auth/callback/google",
         "auth/refresh",
         "auth/logout",
+        "book/cover/*",
     ]
 
     JWT_SECRET_KEY: str
@@ -56,6 +59,7 @@ def get_service_url(service_name: str) -> str | None:
         "reader": config.settings.READER_SERVICE_URL,
         "learning": config.settings.LEARNING_SERVICE_URL,
         "translation": config.settings.TRANSLATION_SERVICE_URL,
+        "search": config.settings.SEARCH_SERVICE_URL,
         "users": config.settings.AUTH_SERVICE_URL,
     }
     return mapping.get(service_name)
