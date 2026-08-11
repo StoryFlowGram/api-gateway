@@ -1,0 +1,25 @@
+# Service отвечает за стабильное DNS-имя и маршрутизацию трафика на поды Deployment.
+# Через него другие сервисы обращаются к book-service внутри кластера.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+                           
+  namespace: default
+  labels:
+    app: api-gateway
+    env: production
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: api-gateway      
+
+
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000           
+      targetPort: http     
