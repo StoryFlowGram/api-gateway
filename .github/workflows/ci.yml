@@ -56,11 +56,12 @@ jobs:
 
     steps:
       - name: Виконуємо деплой на сервері
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
+          username: ${{ secrets.USERNAME || 'deployer' }}
           key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd /home/deployer/sfg-app
 
