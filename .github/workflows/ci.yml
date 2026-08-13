@@ -1,5 +1,4 @@
 name: CI/CD
-name: CI Pipeline
 
 on:
   push:
@@ -16,12 +15,11 @@ permissions:
   packages: write
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
   POETRY_VERSION: "2.4.1"
 
 jobs:
   test:
-    name: Тесты
+    name: Тести
     runs-on: ubuntu-latest
     steps:
       - name: Завантажуємо код репозиторію
@@ -42,15 +40,17 @@ jobs:
           key: poetry-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
           restore-keys: poetry-${{ runner.os }}-
 
-      - name: Установка зависимостей
+      - name: Установка залежностей
         run: poetry install --no-root || poetry install
 
-      - name: Встановлюємо Poetry
-        run: pip install poetry
-
-      - name: Встановлюємо залежності проекту
-  
-        run: poetry install --no-interaction --no-root
+  build-and-push:
+    name: Сборка и публикация образа
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Завантажуємо код репозиторію
+        uses: actions/checkout@v4
 
       - name: Підготовка до збірки Docker-образу
         id: prep
@@ -69,9 +69,9 @@ jobs:
       - name: Збираємо та пушимо Docker-образ до GCR
         uses: docker/build-push-action@v5
         with:
-            context: .
-            push: true
-            tags: ${{ steps.prep.outputs.image_id }}:latest
+          context: .
+          push: true
+          tags: ${{ steps.prep.outputs.image_id }}:latest
 
   deploy:
     name: Деплой (production)
@@ -88,16 +88,13 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cd /home/deployer/sfg-app
+            cd /home/deployer/spaced-repetition-bot/SFG-infra
 
             # Авторизуємося в GHCR на сервері
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Завантажуємо нові версії образів
-            docker compose -f docker-compose-prod.yml pull
+            docker compose -f docker-compose-prod.yaml pull
 
             # Перезапускаємо сервіси
-            docker compose -f docker-compose-prod.yml up -d --remove-orphans
-
-            # Очищуємо старі образи
-            docker image prune -f
+            docker compose -f docker-compose-prod.yaml up -d --remove-orphans
